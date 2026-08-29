@@ -1,6 +1,13 @@
 packages:
   - '.'
 
+# Force js-yaml to a patched version. It is pulled transitively by fumadocs-*.
+# CVE-2026-59869 / CVE-2026-59870 (GHSA-5p4m-2wfm-xmqj): DoS via crafted YAML
+# and quadratic CPU in !!omap resolution, fixed in 4.3.1. Remove once fumadocs
+# updates its peer deps to pull >= 4.3.1.
+overrides:
+  js-yaml@<4.3.1: '^4.3.2'
+
 allowBuilds:
   esbuild: true
   sharp: true
