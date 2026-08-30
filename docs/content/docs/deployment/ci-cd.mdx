@@ -96,8 +96,13 @@ Locally, install with `brew install trivy` (macOS).
 
 #### Running Trivy locally
 
-The pre-commit hook runs Trivy automatically when a dependency manifest is staged, but you can run the same scan by hand at any time.
-This is the exact invocation the hook uses - a whole-tree filesystem scan:
+The pre-commit hook runs Trivy automatically when a dependency manifest is staged, but you can run the same scan by hand at any time:
+
+```bash
+pnpm security:trivy
+```
+
+This wraps the exact invocation the hook and CI use - a whole-tree filesystem scan:
 
 ```bash
 trivy fs --scanners vuln --ignore-unfixed --detection-priority comprehensive --disable-telemetry --skip-version-check --severity HIGH,CRITICAL --exit-code 1 .
