@@ -125,7 +125,7 @@ jobs:
   # -----------------------------------------------------------------------
   # Security scans
   # Both run in parallel with other jobs.
-  # - Trivy: scans pnpm-lock.yaml for HIGH/CRITICAL CVEs
+  # - Trivy: scans the whole tree for HIGH/CRITICAL CVEs
   # - Gitleaks: scans git history for leaked secrets
   # -----------------------------------------------------------------------
   security:
@@ -136,11 +136,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Whole-tree scan (trailing `.`) covers every lockfile - root
+      # pnpm-lock.yaml, docs/pnpm-lock.yaml, and diagrams/uv.lock. Flags mirror
+      # the pre-commit hook (.husky/pre-commit) so local and CI scans stay in
+      # tandem: a CVE that blocks a commit also fails CI, and vice versa.
+      # detection-priority=comprehensive matches the hook - the action has no
+      # dedicated input for it, so it is passed via the TRIVY_DETECTION_PRIORITY
+      # env var. Without it CI would default to `precise` and miss the extra
+      # findings the hook's comprehensive mode surfaces.
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_DETECTION_PRIORITY: comprehensive
         with:
           scan-type: fs
-          scan-ref: pnpm-lock.yaml
+          scan-ref: .
+          scanners: vuln
+          ignore-unfixed: true
           severity: HIGH,CRITICAL
           exit-code: 1
           format: table

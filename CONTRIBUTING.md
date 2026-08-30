@@ -14,7 +14,12 @@ fix/EEP-456-session-expiry
 
 - `feat/` - new features
 - `fix/` - bug fixes
+- `docs/` - documentation-only changes
+- `chore/` - tooling, dependencies, config
 - Ad-hoc (no issue): `fix/<brief-description>` is fine for small isolated fixes
+
+The branch prefix mirrors the [commit type](#commits) - use `docs/` for a
+docs-only change, `chore/` for a dependency bump, and so on.
 
 ## Commits
 

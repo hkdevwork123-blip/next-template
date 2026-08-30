@@ -69,9 +69,10 @@ conventions.
 | Trivy    | any     | `brew install trivy` (pre-commit scan)    |
 | Gitleaks | any     | `brew install gitleaks` (pre-commit scan) |
 
-You'll also need a [Clerk](https://clerk.com) account for authentication keys.
-For deployment you'll need a [Neon](https://neon.tech) account for the Postgres
-database - locally, Docker handles the DB so no Neon account is needed for dev.
+> [!NOTE]
+> You'll also need a [Clerk](https://clerk.com) account for authentication keys.
+> For deployment you'll need a [Neon](https://neon.tech) account for the Postgres
+> database - locally, Docker handles the DB so no Neon account is needed for dev.
 
 ## Quick start
 
@@ -81,6 +82,9 @@ cp .env.local_template .env.local    # add your secrets (Clerk keys)
 docker compose up -d                 # start the database
 pnpm db:migrate                      # run migrations
 pnpm dev                             # http://localhost:3000
+
+pnpm dev:docs                        # docs only    - http://localhost:3001
+pnpm dev:all                         # app + docs together
 ```
 
 See [Local Setup](https://docs.example.com/docs/dev-environment/local-setup)

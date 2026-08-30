@@ -23,14 +23,14 @@ No point running a browser suite against broken or vulnerable code.
 
 ## Jobs
 
-| Job           | Command                                             | What it checks                                                                   |
-| ------------- | --------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Lint**      | `pnpm lint`                                         | ESLint - code style, import hygiene, TSDoc                                       |
-| **Typecheck** | `pnpm typecheck`                                    | TypeScript - no type errors                                                      |
-| **Tests**     | `pnpm test` + `pnpm test:tz` + `pnpm test:contract` | Unit, timezone, and contract tests                                               |
-| **Build**     | `pnpm build`                                        | Next.js production build succeeds                                                |
-| **Security**  | Trivy + Gitleaks                                    | Scans `pnpm-lock.yaml` for HIGH/CRITICAL CVEs and git history for leaked secrets |
-| **E2e**       | `pnpm e2e`                                          | Playwright - auth flow and UI smoke tests                                        |
+| Job           | Command                                             | What it checks                                                                 |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Lint**      | `pnpm lint`                                         | ESLint - code style, import hygiene, TSDoc                                     |
+| **Typecheck** | `pnpm typecheck`                                    | TypeScript - no type errors                                                    |
+| **Tests**     | `pnpm test` + `pnpm test:tz` + `pnpm test:contract` | Unit, timezone, and contract tests                                             |
+| **Build**     | `pnpm build`                                        | Next.js production build succeeds                                              |
+| **Security**  | Trivy + Gitleaks                                    | Scans the whole tree for HIGH/CRITICAL CVEs and git history for leaked secrets |
+| **E2e**       | `pnpm e2e`                                          | Playwright - auth flow and UI smoke tests                                      |
 
 ---
 
@@ -82,7 +82,7 @@ Two security tools run on every CI push, both in the `security` job.
 
 ### Trivy
 
-[Trivy](https://aquasecurity.github.io/trivy/) scans `pnpm-lock.yaml` for HIGH or CRITICAL CVEs and fails the build if any are found.
+[Trivy](https://aquasecurity.github.io/trivy/) scans the whole tree for HIGH or CRITICAL CVEs and fails the build if any are found.
 This mirrors the pre-commit Trivy hook so vulnerabilities are caught in CI even if the hook was bypassed locally.
 
 Trivy does not need to be installed on CI - the `aquasecurity/trivy-action` handles it.
@@ -92,6 +92,52 @@ Locally, install with `brew install trivy` (macOS).
   Trivy itself has faced supply chain attacks, so keep an eye on the [GitHub
   Advisory Database](https://github.com/advisories) for known vulnerabilities in
   your toolchain.
+</Callout>
+
+#### Running Trivy locally
+
+The pre-commit hook runs Trivy automatically when a dependency manifest is staged, but you can run the same scan by hand at any time.
+This is the exact invocation the hook uses - a whole-tree filesystem scan:
+
+```bash
+trivy fs --scanners vuln --ignore-unfixed --detection-priority comprehensive --disable-telemetry --skip-version-check --severity HIGH,CRITICAL --exit-code 1 .
+```
+
+The trailing `.` scans every lockfile in the tree - the root `pnpm-lock.yaml`, the standalone `docs/pnpm-lock.yaml`, and `diagrams/uv.lock`.
+Run it from the repo root before committing a dependency change to see exactly what the hook will see.
+
+<Callout>
+  CI runs this same whole-tree scan, so a local pass and a CI pass mean the same
+  thing. The pre-commit hook and the CI `security` job are kept deliberately in
+  tandem - a CVE that blocks a local commit also fails CI, and vice versa.
+</Callout>
+
+### Dependency overrides
+
+Sometimes a CVE lives in a **transitive** dependency - something we never asked for directly, pulled in several layers down by a package we did ask for.
+When there's no direct dependency we can bump to escape it, we reach for a pnpm override.
+
+An override says: wherever anything in the tree resolves package X, force it to version Y instead.
+It's a pnpm-level rewrite of the dependency graph.
+We reach for it only when a transitive dependency has a CVE and no direct bump clears it.
+
+Overrides live in `pnpm-workspace.yaml` (pnpm v11 ignores `pnpm.overrides` in `package.json`), each annotated with the CVE it clears and the condition under which it can be removed:
+
+```yaml
+overrides:
+  # Force undici to a patched version. It is pulled transitively by @ai-sdk/provider-utils.
+  # CVE-2026-12151 / CVE-2026-1526 / CVE-2026-2229: WebSocket DoS via unbounded memory
+  # growth, fixed in 6.27.0. Remove once @ai-sdk/provider-utils updates to pull >= 6.27.0.
+  undici@<6.27.0: '^6.27.0'
+```
+
+<Callout type='warn'>
+  An override forces a version the direct consumer never tested against. If the
+  override crosses a major version (e.g. `undici` 5 → 6) and the consuming
+  library relied on a removed or changed API, it can break at runtime. Verify
+  the affected package still builds and works after adding one, and delete the
+  override as soon as the upstream dependency widens its own range - carrying it
+  longer than necessary is strictly riskier than removing it.
 </Callout>
 
 ### Gitleaks
