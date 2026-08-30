@@ -19,6 +19,7 @@
     "start": "next start",
     "lint": "eslint",
     "lint:probe": "bash scripts/lint-probe.sh",
+    "security:trivy": "trivy fs --scanners vuln --ignore-unfixed --detection-priority comprehensive --disable-telemetry --skip-version-check --severity HIGH,CRITICAL --exit-code 1 .",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:contract": "vitest run --config vitest.contract.config.ts",

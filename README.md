@@ -72,7 +72,7 @@ conventions.
 > [!NOTE]
 > You'll also need a [Clerk](https://clerk.com) account for authentication keys.
 > For deployment you'll need a [Neon](https://neon.tech) account for the Postgres
-> database - locally, Docker handles the DB so no Neon account is needed for dev.
+> database. Locally, Docker handles the DB so no Neon account is needed for dev.
 
 ## Quick start
 
@@ -87,8 +87,7 @@ pnpm dev:docs                        # docs only    - http://localhost:3001
 pnpm dev:all                         # app + docs together
 ```
 
-See [Local Setup](https://docs.example.com/docs/dev-environment/local-setup)
-for environment variables, database seeding, and the full command reference.
+See [Local Setup](https://docs.eep-next-template.dev/docs/dev-environment/local-setup) from the docs site for further details.
 
 ## Contributing
 
